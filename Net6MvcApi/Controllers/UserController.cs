@@ -1,16 +1,14 @@
+using ErrorOr;
 using Microsoft.AspNetCore.Mvc;
 using Net6MvcApi.Contracts.Users;
 using Net6MvcApi.Models;
+using Net6MvcApi.ServiceErrors;
 using Net6MvcApi.Services.Users;
 
 namespace Net6MvcApi.Controllers;
 
-[ApiController]
-// Endpoint api/User
-//[Route(template:"api/[controller]")]
 [Route(template: "api/users")]
-
-public class UserController : ControllerBase
+public class UserController : ApiController
 {
 
     private readonly IUserService _userService;
@@ -26,25 +24,28 @@ public class UserController : ControllerBase
     {
         var user = new User(Guid.NewGuid(), request.Name, request.Email, request.DateOfBirth, DateTime.UtcNow, DateTime.UtcNow);
 
-        _userService.CreateUser(user);
+        ErrorOr<Created> createUserResult = _userService.CreateUser(user);
 
-        var response = new UserResponse(user.Id, user.Name, user.Email, user.DateOfBirth, user.CreatedDate, user.ModifiedDate);
-        // return Ok(response);
-        return CreatedAtAction(
-            actionName: nameof(GetUser),
-            routeValues: new { id = user.Id },
-            value: response
+        return createUserResult.Match(
+            created => CreatedAtGetUser(user),
+            errors => Problem(errors)
         );
     }
+
+
 
     // GET api/<UserController>/1
     [HttpGet(template: "{id:guid}")]
     public IActionResult GetUser(Guid id)
     {
-        User user = _userService.GetUser(id);
-        var response = new UserResponse(user.Id, user.Name, user.Email, user.DateOfBirth, user.CreatedDate, user.ModifiedDate);
-        return Ok(response);
+        ErrorOr<User> getUserResult = _userService.GetUser(id);
+        return getUserResult.Match(
+            user => Ok(MapUserResponse(user)),
+            errors => Problem(errors)
+        );
     }
+
+
 
     // PUT api/<UserController>/1
     [HttpPut(template: "{id:guid}")]
@@ -59,15 +60,42 @@ public class UserController : ControllerBase
             DateTime.UtcNow
         );
 
-        _userService.UpsertUser(user);
-        return NoContent();
-        // TODO: return 201 if a new user was created
+        ErrorOr<UpsertedUser> upsertedUserResult =  _userService.UpsertUser(user);
+        
+        return upsertedUserResult.Match(
+            upserted => upserted.IsNewlyCreated ? CreatedAtGetUser(user):NoContent(),
+            errors => Problem(errors)
+        );
     }
 
     [HttpDelete(template: "{id:guid}")]
     public IActionResult DeleteUser(Guid id)
     {
-        _userService.DeleteUser(id);
-        return NoContent();
+        ErrorOr<Deleted> deletedUserResult = _userService.DeleteUser(id);
+        return deletedUserResult.Match(
+            deleted => NoContent(),
+            errors => Problem(errors)
+        );
+    }
+
+    private static UserResponse MapUserResponse(User user)
+    {
+        return new UserResponse(
+            user.Id,
+            user.Name,
+            user.Email,
+            user.DateOfBirth,
+            user.CreatedDate,
+            user.ModifiedDate
+        );
+    }
+
+        private IActionResult CreatedAtGetUser(User user)
+    {
+        return CreatedAtAction(
+                    actionName: nameof(GetUser),
+                    routeValues: new { id = user.Id },
+                    value: MapUserResponse(user)
+                );
     }
 }

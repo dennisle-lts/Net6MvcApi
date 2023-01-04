@@ -1,11 +1,12 @@
+using ErrorOr;
 using Net6MvcApi.Models;
 
 namespace Net6MvcApi.Services.Users;
 
 public interface IUserService
 {
-    void CreateUser(User user);
-    void DeleteUser(Guid id);
-    User GetUser(Guid id);
-    void UpsertUser(User user);
+    ErrorOr<Created> CreateUser(User user);
+    ErrorOr<Deleted> DeleteUser(Guid id);
+    ErrorOr<User> GetUser(Guid id);
+    ErrorOr<UpsertedUser> UpsertUser(User user);
 }
