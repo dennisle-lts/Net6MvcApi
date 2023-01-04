@@ -1,0 +1,8 @@
+POST https://localhost:7228/api/users
+Content-Type: application/json
+
+{
+    "name": "john doe",
+    "email": "jdoe@gmail.com",
+    "dateofbirth": "2022-01-01T01:00:00Z"
+}

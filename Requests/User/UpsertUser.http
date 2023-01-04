@@ -1,0 +1,9 @@
+@id = a7e44fcc-c4c4-4175-9186-da1c11929c24
+PUT  https://localhost:7228/api/users/{{id}}
+Content-Type: application/json
+
+{
+    "name": "john doe",
+    "email": "jdoe@gmail.com",
+    "dateofbirth": "2022-11-01T01:00:00Z"
+}

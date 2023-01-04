@@ -1,0 +1,3 @@
+@id = a7e44fcc-c4c4-4175-9186-da1c11929c24
+DELETE  https://localhost:7228/api/users/{{id}}
+Content-Type: application/json
